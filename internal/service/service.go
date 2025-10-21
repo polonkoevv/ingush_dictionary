@@ -8,6 +8,7 @@ import (
 	"strings"
 	"test/internal/models"
 	"test/internal/storage"
+	"time"
 )
 
 const BASE_URL = "https://doshlorg.ru/api/words?search=%s&language=%s&limit=100"
@@ -48,7 +49,8 @@ func (s *languageService) IngToRus(word string) (string, int, error) {
 
 	word = PrepareWord(word)
 
-	res, err := http.Get(fmt.Sprintf(BASE_URL_ING, word))
+	client := &http.Client{Timeout: 10 * time.Second}
+	res, err := client.Get(fmt.Sprintf(BASE_URL_ING, word))
 	if err != nil {
 		return "", 0, err
 	}
@@ -71,9 +73,9 @@ func (s *languageService) IngToRus(word string) (string, int, error) {
 	rs := ""
 
 	for _, wrd := range wordResponse.Data {
-		rs = rs + fmt.Sprintf("%s\n", wrd.Word)
+		rs = rs + fmt.Sprintf("<b>%s</b>\n", wrd.Word)
 		for _, wrd2 := range wrd.Translates {
-			rs = rs + fmt.Sprintf("--- \t%s\n", wrd2.Word)
+			rs = rs + fmt.Sprintf("• %s\n", wrd2.Word)
 		}
 	}
 
@@ -81,7 +83,9 @@ func (s *languageService) IngToRus(word string) (string, int, error) {
 }
 
 func (s *languageService) RusToIng(word string) (string, int, error) {
-	res, err := http.Get(fmt.Sprintf(BASE_URL_RUS, word))
+	word = PrepareWord(word)
+	client := &http.Client{Timeout: 10 * time.Second}
+	res, err := client.Get(fmt.Sprintf(BASE_URL_RUS, word))
 	if err != nil {
 		return "", 0, err
 	}
@@ -104,9 +108,9 @@ func (s *languageService) RusToIng(word string) (string, int, error) {
 	rs := ""
 
 	for _, wrd := range wordResponse.Data {
-		rs = rs + fmt.Sprintf("%s\n", wrd.Word)
+		rs = rs + fmt.Sprintf("<b>%s</b>\n", wrd.Word)
 		for _, wrd2 := range wrd.Words {
-			rs = rs + fmt.Sprintf("--- \t%s\n", wrd2.Word)
+			rs = rs + fmt.Sprintf("• %s\n", wrd2.Word)
 		}
 	}
 	return rs, wordResponse.Total, nil
