@@ -1,3 +1,4 @@
 .env
 ./*.ogg
 go.sum
+.zed
