@@ -10,14 +10,12 @@ import (
 )
 
 type TgHandler struct {
-	bot     *tgbotapi.BotAPI
-	userSrv application.UserService
-	wrdSrv  application.WordService
-	dictSrv application.DictService
+	bot *tgbotapi.BotAPI
+	srv *application.Service
 }
 
-func NewTgHandler(bot *tgbotapi.BotAPI, userSrv application.UserService, wrdSrv application.WordService, dictSrv application.DictService) *TgHandler {
-	return &TgHandler{bot: bot, userSrv: userSrv, wrdSrv: wrdSrv, dictSrv: dictSrv}
+func NewTgHandler(bot *tgbotapi.BotAPI, srv *application.Service) *TgHandler {
+	return &TgHandler{bot: bot, srv: srv}
 }
 
 func setupBotCommands(bot *tgbotapi.BotAPI) error {

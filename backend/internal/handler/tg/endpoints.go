@@ -10,7 +10,7 @@ import (
 
 func (h *TgHandler) hello(ctx context.Context, update *tgbotapi.Update) {
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Привет! Я бот для перевода слов с русского на ингушский и обратно. Нажмите ‘Сменить язык’ и введите слово.")
-	h.userSrv.CreateOrGetUser(ctx, update)
+	h.srv.UserSrv.CreateOrGetUser(ctx, update)
 	h.bot.Send(msg)
 }
 
@@ -37,7 +37,7 @@ func (h *TgHandler) deleteMessageSafe(chatID int64, messageID int) error {
 }
 
 func (h *TgHandler) changeLanguage(ctx context.Context, update *tgbotapi.Update) {
-	language, err := h.userSrv.ChangeLanguage(ctx, update)
+	language, err := h.srv.UserSrv.ChangeLanguage(ctx, update)
 	if err != nil {
 		log.Println("change language error:", err)
 	}
@@ -54,7 +54,7 @@ func (h *TgHandler) changeLanguage(ctx context.Context, update *tgbotapi.Update)
 }
 
 func (h *TgHandler) translate(ctx context.Context, update *tgbotapi.Update) {
-	language, err := h.userSrv.GetLanguage(ctx, update)
+	language, err := h.srv.UserSrv.GetLanguage(ctx, update)
 	if err != nil {
 		log.Println("get language error:", err)
 		return
@@ -84,7 +84,7 @@ func (h *TgHandler) translate(ctx context.Context, update *tgbotapi.Update) {
 
 func (h *TgHandler) getWord(ctx context.Context, query, language string, tg_user_id int64) (string, int, error) {
 
-	users_dict, err := h.userSrv.GetUserDicts(ctx, tg_user_id)
+	users_dict, err := h.srv.UserSrv.GetUserDicts(ctx, tg_user_id)
 
 	if err != nil {
 		return "", 0, err
@@ -94,7 +94,7 @@ func (h *TgHandler) getWord(ctx context.Context, query, language string, tg_user
 		return "Сначала выберите словарь", 0, nil
 	}
 
-	words, err := h.wrdSrv.GetTranslationFiltered(ctx, query, language, tg_user_id)
+	words, err := h.srv.WordSrv.GetTranslationFiltered(ctx, query, language, tg_user_id)
 	if err != nil {
 		return "", 0, err
 	}
@@ -131,7 +131,7 @@ func (h *TgHandler) getWord(ctx context.Context, query, language string, tg_user
 }
 
 func (h *TgHandler) listDictionaries(ctx context.Context, update *tgbotapi.Update) {
-	dicts, err := h.dictSrv.GetAllDictionaries(ctx)
+	dicts, err := h.srv.DictSrv.GetAllDictionaries(ctx)
 
 	if err != nil {
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Ошибка при получении списка словарей")
@@ -158,7 +158,7 @@ func (h *TgHandler) listDictionaries(ctx context.Context, update *tgbotapi.Updat
 }
 
 func (h *TgHandler) getDictKeyboard(ctx context.Context, tg_user_id int64) (*tgbotapi.InlineKeyboardMarkup, error) {
-	userDicts, err := h.userSrv.GetUserDicts(ctx, tg_user_id)
+	userDicts, err := h.srv.UserSrv.GetUserDicts(ctx, tg_user_id)
 
 	if err != nil {
 		fmt.Println(err)
@@ -168,7 +168,7 @@ func (h *TgHandler) getDictKeyboard(ctx context.Context, tg_user_id int64) (*tgb
 		// h.bot.Send(msg)
 	}
 
-	dicts, err := h.dictSrv.GetAllDictionaries(ctx)
+	dicts, err := h.srv.DictSrv.GetAllDictionaries(ctx)
 
 	if err != nil {
 		return nil, err

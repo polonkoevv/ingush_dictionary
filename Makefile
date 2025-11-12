@@ -1,2 +1,2 @@
 run:
-	go run ./cmd/main.go
+	go run ./backend/cmd/main.go

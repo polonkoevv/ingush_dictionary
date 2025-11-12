@@ -14,7 +14,7 @@ func (h *TgHandler) addDictCallback(ctx context.Context, callback *tgbotapi.Call
 		fmt.Println(err)
 		return err
 	}
-	err = h.userSrv.AddDict(ctx, callback.From.ID, dict_id)
+	err = h.srv.UserSrv.AddDict(ctx, callback.From.ID, dict_id)
 	if err != nil {
 		fmt.Println(err)
 		return err
@@ -34,7 +34,7 @@ func (h *TgHandler) remDictCallback(ctx context.Context, callback *tgbotapi.Call
 		fmt.Println(err)
 		return err
 	}
-	err = h.userSrv.RemoveDict(ctx, callback.From.ID, dict_id)
+	err = h.srv.UserSrv.RemoveDict(ctx, callback.From.ID, dict_id)
 	if err != nil {
 		fmt.Println(err)
 		return err

@@ -2,3 +2,4 @@
 ./*.ogg
 go.sum
 .zed
+docker-compose.yml
