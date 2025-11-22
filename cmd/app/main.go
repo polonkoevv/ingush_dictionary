@@ -70,7 +70,7 @@ func main() {
 	}
 	slog.Info("Created Telegram bot")
 
-	tgHandler := tg.NewTgHandler(bot, service)
+	tgHandler := tg.NewTgHandler(bot, service, cfg.MessageTTL)
 
 	// Создаем context с возможностью отмены
 	ctx, cancel := context.WithCancel(context.Background())

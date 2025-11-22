@@ -1,8 +1,7 @@
 .env
-./*.ogg
 go.sum
 .zed
-docker-compose.yml
 logs/
+postgres_data/
 *.log
 sqlbackup

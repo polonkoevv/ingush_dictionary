@@ -1,9 +1,11 @@
 package tg
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"net/url"
+	"strings"
 	"test/internal/domain/dictionary"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -140,4 +142,35 @@ func createPaginationKeyboard(word string, language string, pageNumber int, quan
 	}
 
 	return &km
+}
+
+const allowedChars = " 1АаБбВвГгДдЕеЖжЗзИиКкЛлМмНнОоПпРрСсТтУуФфХхЦцЧчШшЩщЪъЫыЬьЭэЮюЯяAaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz"
+
+func containsOnlyChars(input, allowedChars string) bool {
+	// Создаем map для быстрой проверки
+	allowed := make(map[rune]bool)
+	for _, char := range allowedChars {
+		allowed[char] = true
+	}
+
+	// Проверяем каждый символ входной строки
+	for _, char := range input {
+		if !allowed[char] {
+			return false
+		}
+	}
+	return true
+}
+
+func prepareWord(word string) (string, error) {
+
+	if !containsOnlyChars(word, allowedChars) {
+		return "", errors.New("bad characters")
+	}
+
+	word = strings.ToLower(
+		strings.Trim(word, ""),
+	)
+
+	return word, nil
 }

@@ -12,7 +12,10 @@ import (
 )
 
 func (h *TgHandler) hello(ctx context.Context, update *tgbotapi.Update) error {
-	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Привет! Я бот для перевода слов с русского на ингушский и обратно. Нажмите ‘Сменить язык’ и введите слово.")
+
+	helloMsg := fmt.Sprintf("Привет, %s! \nЯ бот для перевода слов с русского на ингушский и обратно. \nСначала выбери подходящие тебе словари и выбери язык оригинала.", update.Message.From.UserName)
+
+	msg := tgbotapi.NewMessage(update.Message.Chat.ID, helloMsg)
 	_, err := h.srv.UserSrv.CreateOrGetUser(ctx, update)
 	if err != nil {
 		return err
@@ -46,6 +49,19 @@ func (h *TgHandler) deleteMessageSafe(chatID int64, messageID int) error {
 	return err
 }
 
+func (h *TgHandler) sendInstructionVideo(ctx context.Context, update *tgbotapi.Update) error {
+	video := tgbotapi.NewVideo(update.Message.Chat.ID,
+		tgbotapi.FilePath("./assets/instruction.mp4"))
+	video.Caption = "📖 Видео-инструкция"
+	video.SupportsStreaming = true
+
+	_, err := h.bot.Send(video)
+	if err != nil {
+		slog.Error("Error while sending instrution")
+	}
+	return err
+}
+
 func (h *TgHandler) changeLanguage(ctx context.Context, update *tgbotapi.Update) error {
 	language, err := h.srv.UserSrv.ChangeLanguage(ctx, update)
 	if err != nil {
@@ -75,7 +91,17 @@ func (h *TgHandler) translate(ctx context.Context, update *tgbotapi.Update, page
 		return fmt.Errorf("get language error: %w", err)
 	}
 
-	res, max_quant, err := h.getWord(ctx, update.Message.Text, language, update.Message.From.ID, page_number)
+	word, err := prepareWord(update.Message.Text)
+
+	if err != nil {
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Используются запрещенные символы. Для использования доступны только кириллица, латиница и 1")
+		msg.ReplyToMessageID = update.Message.MessageID
+		_, err = h.bot.Send(msg)
+
+		return err
+	}
+
+	res, max_quant, err := h.getWord(ctx, word, language, update.Message.From.ID, page_number)
 	if err != nil {
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, err.Error())
 		msg.ReplyToMessageID = update.Message.MessageID
@@ -117,6 +143,8 @@ func (h *TgHandler) getWord(ctx context.Context, query, language string, tg_user
 	if len(users_dict) == 0 {
 		return "", 0, errors.New("Сначала выбери словарь")
 	}
+
+	query = strings.ToLower(query)
 
 	words, max_quant, err := h.srv.WordSrv.GetTranslationFiltered(ctx, query, language, tg_user_id, page_number)
 	if err != nil {
@@ -216,7 +244,17 @@ func (h *TgHandler) chooseDicts(ctx context.Context, update *tgbotapi.Update) er
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Вы можете выбрать следующие словари:")
 	msg.ReplyMarkup = dictKeyboard
 	msg.ParseMode = "Markdown"
-	_, err = h.bot.Send(msg)
+	sentMsg, err := h.bot.Send(msg)
+	if err != nil {
+		return err
+	}
 
-	return err
+	// Планируем автоматическое удаление через время, указанное в конфиге
+	h.messageCleaner.ScheduleDeletion(
+		sentMsg.Chat.ID,
+		sentMsg.MessageID,
+		h.messageTTL,
+	)
+
+	return nil
 }

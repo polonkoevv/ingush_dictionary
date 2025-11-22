@@ -5,17 +5,26 @@ import (
 	"log/slog"
 	"strings"
 	"test/internal/application"
+	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 type TgHandler struct {
-	bot *tgbotapi.BotAPI
-	srv *application.Service
+	bot            *tgbotapi.BotAPI
+	srv            *application.Service
+	messageCleaner *MessageCleaner
+	messageTTL     time.Duration
 }
 
-func NewTgHandler(bot *tgbotapi.BotAPI, srv *application.Service) *TgHandler {
-	return &TgHandler{bot: bot, srv: srv}
+func NewTgHandler(bot *tgbotapi.BotAPI, srv *application.Service, messageTTL time.Duration) *TgHandler {
+	cleaner := NewMessageCleaner(bot)
+	return &TgHandler{
+		bot:            bot,
+		srv:            srv,
+		messageCleaner: cleaner,
+		messageTTL:     messageTTL,
+	}
 }
 
 func setupBotCommands(bot *tgbotapi.BotAPI) error {
@@ -34,8 +43,11 @@ func setupBotCommands(bot *tgbotapi.BotAPI) error {
 }
 
 // Run запускает цикл обработки апдейтов TG, включая сообщения и callback-кнопки.
-// Run запускает цикл обработки апдейтов TG, включая сообщения и callback-кнопки.
 func (h *TgHandler) Run(ctx context.Context) error {
+	// Запускаем cleaner в фоне
+	go h.messageCleaner.Start(ctx)
+	defer h.messageCleaner.Stop()
+
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 	if err := setupBotCommands(h.bot); err != nil {
@@ -156,6 +168,11 @@ func (h *TgHandler) Run(ctx context.Context) error {
 						)
 						h.errorCallback(ctx, update.CallbackQuery)
 					} else {
+						// Отменяем запланированное автоматическое удаление
+						h.messageCleaner.CancelDeletion(
+							update.CallbackQuery.Message.Chat.ID,
+							update.CallbackQuery.Message.MessageID,
+						)
 						slog.Info("telegram callback processed", slog.String("component", "tg_handler"),
 							slog.String("op", "deleteMessageCallback"),
 							slog.Group("user",
@@ -175,6 +192,7 @@ func (h *TgHandler) Run(ctx context.Context) error {
 
 			switch update.Message.Text {
 			case "/start":
+				h.sendInstructionVideo(ctx, &update)
 				h.hello(ctx, &update)
 				h.help(ctx, &update)
 				h.deleteMessageSafe(update.Message.Chat.ID, update.Message.MessageID)

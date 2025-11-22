@@ -2,13 +2,15 @@ package config
 
 import (
 	"os"
+	"time"
 
 	"github.com/joho/godotenv"
 )
 
 type Config struct {
-	Token   string
-	Logging struct {
+	Token      string
+	MessageTTL time.Duration
+	Logging    struct {
 		LogFile  string
 		LogLevel string
 	}
@@ -24,13 +26,27 @@ type Config struct {
 func LoadConfig() (*Config, error) {
 	err := godotenv.Load()
 	if err != nil {
-		return nil, err
+		if os.Getenv("TELEGRAM_BOT_TOKEN") == "" {
+			return nil, err
+		}
 	}
 
 	config := &Config{}
 
 	// Заполняем основную структуру
 	config.Token = os.Getenv("TELEGRAM_BOT_TOKEN")
+
+	// Заполняем MessageTTL
+	messageTTLStr := os.Getenv("MESSAGE_TTL")
+	if messageTTLStr == "" {
+		messageTTLStr = "1h" // значение по умолчанию: 24 часа
+	}
+	messageTTL, err := time.ParseDuration(messageTTLStr)
+	if err != nil {
+		// Если не удалось распарсить, используем значение по умолчанию
+		messageTTL = 24 * time.Hour
+	}
+	config.MessageTTL = messageTTL
 
 	// Заполняем Logging
 	config.Logging.LogFile = os.Getenv("LOG_FILE")
