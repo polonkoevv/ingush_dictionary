@@ -144,7 +144,7 @@ func createPaginationKeyboard(word string, language string, pageNumber int, quan
 	return &km
 }
 
-const allowedChars = " 1АаБбВвГгДдЕеЖжЗзИиЙйКкЛлМмНнОоПпРрСсТтУуФфХхЦцЧчШшЩщЪъЫыЬьЭэЮюЯяAaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz"
+const allowedChars = " 1АаБбВвГгДдЕеЁёЖжЗзИиЙйКкЛлМмНнОоПпРрСсТтУуФфХхЦцЧчШшЩщЪъЫыЬьЭэЮюЯяAaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz"
 
 func containsOnlyChars(input, allowedChars string) bool {
 	// Создаем map для быстрой проверки
